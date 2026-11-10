@@ -1,0 +1,32 @@
+# Hot-reload development:  docker compose -f docker-compose.dev.yml up --build
+name: ridex-dev
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment: { POSTGRES_USER: ridex, POSTGRES_PASSWORD: ridex_password, POSTGRES_DB: ridex }
+    ports: ["5432:5432"]
+    volumes: [ridex_dev_pg:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ridex -d ridex"], interval: 5s, timeout: 5s, retries: 10 }
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 5s, retries: 10 }
+  backend:
+    build: { context: ./backend, target: dev }
+    env_file: [./backend/.env]
+    environment:
+      DATABASE_URL: postgres://ridex:ridex_password@postgres:5432/ridex
+      REDIS_URL: redis://redis:6379
+      START_WORKER: "true"
+    command: ["sh", "-c", "npm run migrate && npm run seed && npm run seed:routing && npm run dev"]
+    ports: ["4000:4000"]
+    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy } }
+    volumes: ["./backend/src:/app/src"]
+  frontend:
+    build: { context: ./frontend, target: dev }
+    ports: ["5173:5173"]
+    depends_on: [backend]
+    volumes: ["./frontend/src:/app/src"]
+volumes:
+  ridex_dev_pg:

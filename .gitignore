@@ -1,0 +1,32 @@
+node_modules/
+dist/
+.env
+dump.rdb
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local databases and uploads
+*.sqlite
+*.db
+uploads/

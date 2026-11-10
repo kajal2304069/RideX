@@ -1,0 +1,82 @@
+# Production-style stack:  docker compose up --build
+# Open http://localhost:8080. Demo data: use docker-compose.dev.yml (it publishes the API and database) and see README.
+name: ridex
+
+x-backend-env: &backend-env
+  NODE_ENV: production
+  PORT: 4000
+  DATABASE_URL: postgres://ridex:${POSTGRES_PASSWORD:-ridex_password}@postgres:5432/ridex
+  REDIS_URL: redis://redis:6379
+  CLIENT_URL: ${CLIENT_URL:-http://localhost:8080}
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env (see .env.example)}
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET in .env (see .env.example)}
+  METRICS_TOKEN: ${METRICS_TOKEN:-}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  PAYMENT_PROVIDER: mock
+  START_WORKER: "false"
+  SHUTDOWN_DRAIN_MS: 5000
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ridex
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ridex_password}
+      POSTGRES_DB: ridex
+    volumes: [ridex_postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ridex -d ridex"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [ridex_redis_data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: apply migrations and reference data, then exit. Safe to re-run.
+  migrate:
+    build: { context: ./backend, target: prod }
+    environment: *backend-env
+    command: ["sh", "-c", "for i in 1 2 3 4 5 6 7 8 9 10; do node scripts/migrate.js up && break; echo 'database not ready, retrying in 3s'; sleep 3; done; node scripts/migrate.js up && node src/db/seeds/001_vehicle_types.js && node src/db/seeds/002_road_network.js"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  backend:
+    build: { context: ./backend, target: prod }
+    restart: unless-stopped
+    environment: *backend-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    expose: ["4000"]
+
+  # Same image, different process: BullMQ consumers (notifications, marketplace expiry, rental holds, maintenance).
+  worker:
+    build: { context: ./backend, target: prod }
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    environment: *backend-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  frontend:
+    build: { context: ./frontend, target: prod, args: { VITE_GOOGLE_MAPS_API_KEY: "${VITE_GOOGLE_MAPS_API_KEY:-}" } }
+    restart: unless-stopped
+    ports: ["8080:80"]
+    depends_on:
+      backend: { condition: service_healthy }
+
+volumes:
+  ridex_postgres_data:
+  ridex_redis_data:

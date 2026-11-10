@@ -1,0 +1,12 @@
+import { chromium } from "playwright-core";
+const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
+const p = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+p.on("pageerror", (e) => console.log("ERR", e.message));
+await p.goto("http://localhost:5173/login"); await p.getByRole("button", { name: "Ask RideX" }).click();
+await p.locator("#assistant-lang").selectOption("hi");
+await p.getByRole("button", { name: "सवारी कैसे बुक करूँ?" }).click();
+await p.waitForTimeout(1500); await p.screenshot({ path: "/tmp/e2e/assistant-hi.png" });
+await p.locator("#assistant-lang").selectOption("ta");
+await p.getByLabel(/type your question/i).fill("how do I pay"); await p.getByRole("button", { name: "Ask" }).click();
+await p.waitForTimeout(1500); await p.screenshot({ path: "/tmp/e2e/assistant-ta.png" });
+await browser.close();

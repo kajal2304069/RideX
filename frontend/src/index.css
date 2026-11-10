@@ -1,0 +1,62 @@
+@import "@fontsource-variable/plus-jakarta-sans/index.css";
+@import "leaflet/dist/leaflet.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --line: #1B1FD0; --line-ink: #1B1FD0; --on-line: #fff; }
+/* One brand colour everywhere. (data-line is kept on pages for older markup, but no longer changes the colour.) */
+
+@layer base {
+  html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+  body { @apply bg-concrete font-body text-ink antialiased; background-image: radial-gradient(1200px 600px at 10% -10%, #E3E6FA 0%, transparent 60%), radial-gradient(900px 500px at 100% 0%, #F4F0FF 0%, transparent 55%); background-attachment: fixed; }
+  h1, h2, h3, h4 { @apply font-display font-extrabold tracking-tight; }
+  h1 { @apply text-2xl sm:text-3xl; }
+  h2 { @apply text-xl; }
+  h3 { @apply text-base; }
+  :focus-visible { outline: 3px solid var(--line); outline-offset: 2px; }
+  input, select, textarea { @apply min-h-[48px] w-full rounded-2xl border border-rule bg-white px-4 py-3 text-base shadow-sm placeholder:text-mute/70 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15; }
+  input[type="checkbox"], input[type="radio"] { @apply min-h-0 w-auto shadow-none; }
+  label { @apply text-sm font-semibold text-ink; }
+  table { @apply w-full text-left text-sm; }
+  th { @apply border-b border-rule px-3 py-2.5 font-display text-xs font-semibold uppercase tracking-wide text-mute; }
+  td { @apply border-b border-rule px-3 py-3 align-top; }
+}
+
+@layer components {
+  .btn { @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-transparent px-6 py-3 font-display text-[15px] font-bold shadow-sm transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply bg-brand text-white shadow-[0_10px_24px_-10px_rgba(27,31,208,.7)] hover:bg-brand-600; }
+  .btn-ink { @apply bg-navy text-white hover:bg-navy-2; }
+  .btn-ghost { @apply border-rule bg-white text-ink hover:bg-brand-soft; }
+  .btn-danger { @apply border-repair/30 bg-white text-repair-ink hover:bg-repair/10; }
+  .btn-sm { @apply min-h-[38px] rounded-xl px-4 py-1.5 text-sm; }
+  .panel { @apply relative overflow-hidden rounded-3xl border border-white bg-white shadow-card; }
+  .panel-body { @apply p-4 sm:p-5; }
+  .rule-row { @apply flex flex-wrap items-center justify-between gap-3 border-b border-rule py-3 last:border-b-0; }
+  .badge { @apply inline-flex items-center rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand; }
+  .num { font-variant-numeric: tabular-nums; }
+  .photo { @apply relative isolate overflow-hidden bg-navy-2; }
+  .photo > img { @apply absolute inset-0 -z-10 h-full w-full object-cover; }
+  .photo::after { content: ""; position: absolute; inset: 0; z-index: -5; background: linear-gradient(180deg, rgba(13,15,43,.05) 0%, rgba(13,15,43,.78) 100%); }
+  .chip { @apply inline-flex min-h-[42px] items-center gap-2 whitespace-nowrap rounded-2xl border border-white bg-white px-4 py-2 text-sm font-bold text-ink/70 shadow-card hover:text-ink; }
+  .chip[aria-current="page"], .chip.is-active { @apply bg-brand text-white shadow-[0_10px_24px_-12px_rgba(27,31,208,.8)]; }
+  /* floating glass-white card used over maps */
+  .float-card { @apply rounded-3xl bg-white/95 shadow-lift backdrop-blur; }
+  .round-btn { @apply flex h-12 w-12 items-center justify-center rounded-full bg-white text-ink shadow-lift transition active:scale-95 hover:bg-brand-soft; }
+}
+
+.leaflet-container { font-family: inherit; border-radius: inherit; }
+.no-scrollbar { scrollbar-width: none; } .no-scrollbar::-webkit-scrollbar { display: none; }
+.pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+@keyframes rx-pulse { 0% { transform: scale(.6); opacity: .45; } 100% { transform: scale(1.7); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [style*="rx-pulse"] { animation: none !important; } }
+
+/* Soft, light map like a real ride app (OpenStreetMap tiles, toned down). */
+.rx-map .leaflet-tile-pane { filter: saturate(.55) brightness(1.045) contrast(.93); }
+.rx-map .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,.7); border-radius: 8px 0 0 0; }
+.rx-glide { transition: transform 2.8s linear; }
+.leaflet-container { background: #E6E9F2; }
+.leaflet-zoom-anim .rx-glide { transition: transform .25s cubic-bezier(0,0,.25,1) !important; }
+.rx-map .leaflet-marker-icon { background: none; border: 0; }
